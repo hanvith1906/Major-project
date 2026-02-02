@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "tcs": "^10.0.2"
+  },
+  "devDependencies": {
+    "@ljharb/tsconfig": "^0.3.2",
+    "typescript": "^5.9.2"
+  }
+}

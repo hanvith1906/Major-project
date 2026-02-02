@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ANPR System with Insurance Verification</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f5f7fb;
+      color: #333;
+    }
+
+    header {
+      background-color: #0e1e42;
+      color: white;
+      padding: 16px 32px;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      background-color: white;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .stat-card {
+      text-align: center;
+    }
+
+    .stat-card h2 {
+      margin: 0;
+      font-size: 28px;
+      color: #0e1e42;
+    }
+
+    .stat-card p {
+      margin: 4px 0;
+      color: #666;
+    }
+
+    .main-content {
+      display: flex;
+      justify-content: space-between;
+      padding: 20px;
+      gap: 20px;
+    }
+
+    .card {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      flex: 1;
+      padding: 20px;
+    }
+
+    .video-feed img {
+      width: 100%;
+      border: 2px solid #eee;
+      border-radius: 8px;
+    }
+
+    .controls {
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .controls button {
+      padding: 10px 20px;
+      margin: 0 10px;
+      font-size: 16px;
+      background-color: #0e1e42;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .controls button:hover {
+      background-color: #1d3473;
+    }
+
+    .vehicle-info .field {
+      margin: 12px 0;
+      font-size: 18px;
+    }
+
+    .status-valid {
+      color: green;
+    }
+
+    .status-expired {
+      color: red;
+    }
+
+    .status-unknown {
+      color: orange;
+    }
+    
+    /* New styles for the add record form */
+    .add-record {
+      margin: 20px;
+    }
+    
+    .add-record-form {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      padding: 20px;
+    }
+    
+    .form-group {
+      margin-bottom: 15px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    
+    .form-submit {
+      padding: 10px 20px;
+      background-color: #0e1e42;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    
+    .form-submit:hover {
+      background-color: #1d3473;
+    }
+    
+    .message {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+  </style>
+</head>
+<body>
+  <header>ANPR System with Insurance Verification</header>
+
+  <div class="stats">
+    <div class="stat-card">
+      <h2 id="scanned-count">0</h2>
+      <p>Scanned</p>
+    </div>
+    <div class="stat-card">
+      <h2 id="valid-count">0</h2>
+      <p>Valid</p>
+    </div>
+    <div class="stat-card">
+      <h2 id="expired-count">0</h2>
+      <p>Expired</p>
+    </div>
+    <div class="stat-card">
+      <h2 id="unknown-count">0</h2>
+      <p>Unknown</p>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button onclick="startStream()">Start Stream</button>
+    <button onclick="stopStream()">Stop Stream</button>
+  </div>
+
+  <div class="main-content">
+    <div class="card video-feed">
+      <h3>Video Feed</h3>
+      <img id="video" src="/video" alt="Video Stream">
+    </div>
+
+    <div class="card vehicle-info">
+      <h3>Vehicle Information</h3>
+      <div class="field"><strong>Plate Number:</strong> <span id="plate-number">-</span></div>
+      <div class="field"><strong>Insurance Status:</strong> <span id="insurance-status">-</span></div>
+    </div>
+  </div>
+  
+  <!-- New section for adding records -->
+  <div class="add-record">
+    <h3>Add Insurance Record</h3>
+    <div class="add-record-form">
+      <div class="form-group">
+        <label for="plate-input">License Plate Number:</label>
+        <input type="text" id="plate-input" placeholder="Enter plate number" required>
+      </div>
+      <div class="form-group">
+        <label for="status-select">Insurance Status:</label>
+        <select id="status-select" required>
+          <option value="Valid">Valid</option>
+          <option value="Expired">Expired</option>
+          <option value="Unknown">Unknown</option>
+        </select>
+      </div>
+      <button class="form-submit" onclick="addRecord()">Add Record</button>
+      <div id="message-container"></div>
+    </div>
+  </div>
+
+  <script>
+    function startStream() {
+      fetch('/start', { method: 'POST' })
+        .then(res => res.json())
+        .then(data => console.log(data));
+    }
+
+    function stopStream() {
+      fetch('/stop', { method: 'POST' })
+        .then(res => res.json())
+        .then(data => console.log(data));
+    }
+    
+    function addRecord() {
+      const plateNumber = document.getElementById('plate-input').value.trim().toUpperCase();
+      const insuranceStatus = document.getElementById('status-select').value;
+      const messageContainer = document.getElementById('message-container');
+      
+      // Validate input
+      if (!plateNumber) {
+        displayMessage('Please enter a plate number', 'error');
+        return;
+      }
+      
+      // Prepare data for sending
+      const data = {
+        plate: plateNumber,
+        status: insuranceStatus
+      };
+      
+      // Send data to the server
+      fetch('/add_record', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      })
+      .then(response => response.json())
+      .then(result => {
+        if (result.status === "Record added successfully") {
+          displayMessage(`Record for plate ${plateNumber} added successfully with status: ${insuranceStatus}`, 'success');
+          document.getElementById('plate-input').value = ''; // Clear the input field
+        } else {
+          displayMessage(`Error: ${result.error || 'Failed to add record'}`, 'error');
+        }
+      })
+      .catch(error => {
+        displayMessage(`Error: ${error.message}`, 'error');
+      });
+    }
+    
+    function displayMessage(text, type) {
+      const messageContainer = document.getElementById('message-container');
+      messageContainer.innerHTML = `<div class="message ${type}">${text}</div>`;
+      
+      // Clear message after 5 seconds
+      setTimeout(() => {
+        messageContainer.innerHTML = '';
+      }, 5000);
+    }
+
+    function updateUI() {
+      fetch('/plates')
+        .then(res => res.json())
+        .then(data => {
+          if (data.last_plate) {
+            document.getElementById('plate-number').textContent = data.last_plate.plate || "-";
+            const statusSpan = document.getElementById('insurance-status');
+            statusSpan.textContent = data.last_plate.status || "Unknown";
+            statusSpan.className = data.last_plate.status === "Valid" ? "status-valid" :
+                                   data.last_plate.status === "Expired" ? "status-expired" :
+                                   "status-unknown";
+          }
+
+          document.getElementById('scanned-count').textContent = data.stats?.scanned || 0;
+          document.getElementById('valid-count').textContent = data.stats?.valid || 0;
+          document.getElementById('expired-count').textContent = data.stats?.expired || 0;
+          document.getElementById('unknown-count').textContent = data.stats?.unknown || 0;
+        });
+    }
+
+    setInterval(updateUI, 3000);
+  </script>
+</body>
+</html>
